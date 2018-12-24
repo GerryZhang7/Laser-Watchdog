@@ -37,3 +37,154 @@
 // 	PRINT_MSG3(statsFile, time1, programName, "sev = Info ", numberIn, " objects entered the room \n\n");
 // 	getTime(time1);
 // 	PRINT_MSG3(statsFile, time1, programName, "sev = Info ", numberOut, " objects exitted the room \n\n");
+
+
+
+//HARDWARE DEPENDENT CODE
+
+GPIO_Handle initializeGPIO() {
+	GPIO_Handle gpio;
+	gpio = gpiolib_init_gpio();
+	if (gpio == NULL) {
+		perror("Could not initialize GPIO");
+	}
+	return gpio;
+}
+enum State { START, EQUALS, NOT_EQUALS, TIMEOUT, LOGFILE, STATSFILE };
+void readConfig(FILE* configFile, int* timeout, char* logFileName, char* statsFileName) {
+
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	int parameter = 0;
+	char buffer[255];
+
+	enum State s = START;
+
+	*timeout = 0;
+
+	while (fgets(buffer, 255, configFile) != NULL) {
+		i = 0;
+
+		if (buffer[i] != '#') {
+			while (buffer[i] != 0) {
+				switch (s) {
+
+				case START:
+					if (buffer[i] == '=') {
+						s = EQUALS;
+					}
+					else if (buffer[i] != '=') {
+						s = NOT_EQUALS;
+					}
+					else {
+						s = START;
+					}
+					++i;
+					break;
+
+				case NOT_EQUALS:
+					if (buffer[i] != '=') {
+						s = NOT_EQUALS;
+					}
+					else if (buffer[i] == '=') {
+						s = EQUALS;
+					}
+					++i;
+					break;
+
+				case EQUALS:
+					if (parameter == 0) {
+						s = TIMEOUT;
+					}
+					else if (parameter == 1) {
+						s = LOGFILE;
+					}
+					else if (parameter == 2) {
+						s = STATSFILE;
+					}
+					//++i;
+					break;
+
+				case TIMEOUT:
+					while (buffer[i] != 0) {
+						if (buffer[i] >= '0' && buffer[i] <= '9')
+						{
+							//Move the previous digits up one position and add the
+							//new digit
+							*timeout = (*timeout * 10) + (buffer[i] - '0');
+						}
+						++i;
+					}
+					++parameter;
+					s = NOT_EQUALS;
+					break;
+
+				case LOGFILE:
+					j = 0;
+					while (buffer[i] != 0 && buffer[i] != '\n')
+					{
+						//If the characters after the equal sign are not spaces or
+						//equal signs, then it will add that character to the string
+						if (buffer[i] != ' ' && buffer[i] != '=')
+						{
+							logFileName[j] = buffer[i];
+							++j;
+						}/*
+						else {
+							char defaultLog[24] = "/home/pi/defaultlog.log";
+							for(int l = 0; l <= 24; l++){
+								logFileName[j] = defaultLog[l];
+								j++;
+							}
+						}*/
+						++i;
+					}
+					/*	else {
+						++i;
+						s = NOT_EQUALS;
+					}*/
+
+					//Add a null terminator at the end
+					logFileName[j] = 0;
+					++parameter;
+					s = NOT_EQUALS;
+
+					break;
+
+				case STATSFILE:
+					k = 0;
+					while (buffer[i] != 0 && buffer[i] != '\n')
+					{
+						//If the characters after the equal sign are not spaces or
+						//equal signs, then it will add that character to the string
+						if (buffer[i] != ' ' && buffer[i] != '=')
+						{
+							statsFileName[k] = buffer[i];
+							++k;
+						}
+						/*else {
+							char defaultStats[26] = "/home/pi/defaultstats.log";
+							for(int l = 0; l <= 26; l++){
+								statsFileName[k] = defaultStats[l];
+								k++;
+							}
+						}*/
+						++i;
+					}
+					//Add a null terminator at the end
+					statsFileName[k] = 0;
+					++parameter;
+					s = NOT_EQUALS;
+
+					break;
+
+				default:
+					break;
+
+				}
+				//++i;
+			}
+		}
+	}
+}
