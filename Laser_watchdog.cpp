@@ -228,3 +228,111 @@ void outputMessage(int laser1Count, int laser2Count, int numberIn, int numberOut
 	printf("%d objects entered the room \n", numberIn);
 	printf("%d objexts exitted the room \n", numberOut);
 }
+
+int main(const int argc, const char* const argv[]) {
+	enum State { START, LEFT, LEFT_BOTH, LEFT_RIGHT, OUT, RIGHT, RIGHT_BOTH, RIGHT_LEFT, IN, NONE };
+	enum State s = START;
+
+	int laser1Count = 0;
+	int* a = &laser1Count;
+
+	int laser2Count = 0;
+	int* b = &laser2Count;
+
+	int numberIn = 0;
+	int* c = &numberIn;
+
+	int numberOut = 0;
+	int* d = &numberOut;
+
+	//Create a string that contains the program name
+	const char* argName = argv[0];
+
+	//These variables will be used to count how long the name of the program is
+	int i = 0;
+	int namelength = 0;
+
+	while (argName[i] != 0)
+	{
+		namelength++;
+		i++;
+	}
+
+	char programName[namelength];
+
+	i = 0;
+
+	//Copy the name of the program without the ./ at the start
+	//of argv[0]
+	while (argName[i + 2] != 0)
+	{
+		programName[i] = argName[i + 2];
+		i++;
+	}
+
+	//Create a file pointer named configFile
+	FILE* configFile;
+	//Set configFile to point to the Lab4Sample.cfg file. It is
+	//set to read the file.
+	configFile = fopen("/home/pi/Lab4Sample.cfg", "r");
+
+	//Output a warning message if the file cannot be openned
+	if (!configFile)
+	{
+		perror("The config file could not be opened");
+		return -1;
+	}
+
+	//Declare the variables that will be passed to the readConfig function
+	int timeout;
+	char logFileName[50];
+	char statsFileName[50];
+
+	//Call the readConfig function to read from the config file
+	readConfig(configFile, &timeout, logFileName, statsFileName);
+
+	//Close the configFile now that we have finished reading from it
+	fclose(configFile);
+
+	//Creates a pointer called logFile that points to the logFile.
+	FILE* logFile;
+
+	logFile = fopen(logFileName, "a");
+
+	//Creates a pointer called statsFile that points to the statsFile.
+	FILE* statsFile;
+
+	statsFile = fopen(statsFileName, "a");
+
+	//Check that the file opens properly.
+	if (!configFile)
+	{
+		perror("The log file could not be opened");
+		return -1;
+	}
+
+	char time1[30];
+	getTime(time1);
+
+	getTime(time1);
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "The program is running\n\n");
+
+	GPIO_Handle gpio = initializeGPIO();
+
+	getTime(time1);
+
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "The GPIO pins have been initialized\n\n");
+
+	uint32_t sel_reg = gpiolib_read_reg(gpio, GPFSEL(1));
+	sel_reg &= ~(1 << 18);
+	gpiolib_write_reg(gpio, GPFSEL(1), sel_reg);
+
+	getTime(time1);
+
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "Pin 16 has been set as output\n\n");
+
+	if (argc != 2) {
+		PRINT_MSG(logFile, time1, programName, "sev = Error ", "Invalid number of arguments\n\n");
+		errorMessage(-1);
+		return -1;
+	}
