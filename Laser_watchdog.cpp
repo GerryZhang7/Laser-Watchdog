@@ -218,3 +218,13 @@ int laserDiodeStatus(GPIO_Handle gpio, int diodeNumber) {
 }
 
 #endif
+
+//END OF HARDWARE DEPENDENT CODE
+
+//FINAL OUTPUT MESSAGE WITH RESULTS
+void outputMessage(int laser1Count, int laser2Count, int numberIn, int numberOut) {
+	printf("Laser 1 was broken %d times \n", laser1Count);
+	printf("Laser 2 was broken %d times \n", laser2Count);
+	printf("%d objects entered the room \n", numberIn);
+	printf("%d objexts exitted the room \n", numberOut);
+}
