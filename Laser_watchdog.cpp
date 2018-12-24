@@ -336,3 +336,25 @@ int main(const int argc, const char* const argv[]) {
 		errorMessage(-1);
 		return -1;
 	}
+
+	//watchdog initialization
+	int watchdog;
+	if ((watchdog = open("/dev/watchdog", O_RDWR | O_NOCTTY)) < 0) {
+		printf("Error: Couldn't open watchdog device! %d\n", watchdog);
+		return -1;
+	}
+	getTime(time1);
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "The Watchdog file has been opened\n\n");
+	ioctl(watchdog, WDIOC_SETTIMEOUT, &timeout);
+	getTime(time1);
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "The Watchdog time limit has been set\n\n");
+	ioctl(watchdog, WDIOC_GETTIMEOUT, &timeout);
+	printf("The watchdog timeout is %d seconds.\n\n", timeout);
+	//
+
+	time_t startTime = time(NULL);
+	int timeLimit = atoi(argv[1]);
+
+	getTime(time1);
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "User has entered a valid time\n\n");
+
