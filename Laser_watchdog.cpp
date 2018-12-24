@@ -358,3 +358,48 @@ int main(const int argc, const char* const argv[]) {
 	getTime(time1);
 	PRINT_MSG(logFile, time1, programName, "sev = Info ", "User has entered a valid time\n\n");
 
+
+	//INSERT STATE MACHINE HERE
+
+
+
+	//printf("Test Message\n");
+	outputMessage(laser1Count, laser2Count, numberIn, numberOut);
+	//printf("logFile:%s \n", *logFileName);
+	//printf("statsFile:%s \n", *statsFileName);
+	getTime(time1);
+	PRINT_MSG1(statsFile, time1, programName, "sev = Info ", "Stats have been updated\n\n");
+
+	getTime(time1);
+	PRINT_MSG2(statsFile, time1, programName, "sev = Info ", "Number of times laser 1 was broken: ", a);
+	getTime(time1);
+	PRINT_MSG2(statsFile, time1, programName, "sev = Info ", "Number of times laser 2 was broken: ", b);
+	getTime(time1);
+	PRINT_MSG2(statsFile, time1, programName, "sev = Info ", "Number of objects entered the room: ", c);
+	getTime(time1);
+	PRINT_MSG2(statsFile, time1, programName, "sev = Info ", "Number of objects exitted the room: ", d);
+
+
+	write(watchdog, "V", 1);
+	getTime(time1);
+	//Log that the Watchdog was disabled
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "The Watchdog was disabled\n\n");
+
+	//Close the watchdog file so that it is not accidentally tampered with
+	close(watchdog);
+	getTime(time1);
+	//Log that the Watchdog was closed
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "The Watchdog was closed\n\n");
+
+	//Free the gpio pins
+	gpiolib_free_gpio(gpio);
+	getTime(time1);
+	//Log that the GPIO pins were freed
+	PRINT_MSG(logFile, time1, programName, "sev = Info ", "The GPIO pins have been freed\n\n");
+
+	return 0;
+}
+
+
+#endif
+
