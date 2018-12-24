@@ -38,8 +38,6 @@
 // 	getTime(time1);
 // 	PRINT_MSG3(statsFile, time1, programName, "sev = Info ", numberOut, " objects exitted the room \n\n");
 
-
-
 //HARDWARE DEPENDENT CODE
 
 GPIO_Handle initializeGPIO() {
@@ -188,3 +186,35 @@ void readConfig(FILE* configFile, int* timeout, char* logFileName, char* statsFi
 		}
 	}
 }
+
+//Checking laser diode statuses for each diode; can probably just switch order to reverse left and right
+#define LASER1_PIN_NUM 4 //Left diode
+#define LASER2_PIN_NUM 6 //Right diode
+int laserDiodeStatus(GPIO_Handle gpio, int diodeNumber) {
+	if (gpio == NULL) {
+		return -1;
+	}
+
+	if (diodeNumber == 1) {
+		uint32_t level_reg = gpiolib_read_reg(gpio, GPLEV(0));
+
+		if (level_reg & (1 << LASER1_PIN_NUM)) {
+			return 1;
+		}
+		else {
+			return 0;
+		}
+	}
+	else if (diodeNumber == 2) {
+		uint32_t level_reg = gpiolib_read_reg(gpio, GPLEV(0));
+
+		if (level_reg & (1 << LASER2_PIN_NUM)) {
+			return 1;
+		}
+		else {
+			return 0;
+		}
+	}
+}
+
+#endif
