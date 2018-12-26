@@ -13,33 +13,31 @@
 #include <time.h> 				//for time_t and the time() function
 #include <sys/time.h>           //for gettimeofday()
 
+
+//The #defines found below are macros that are used to structure the different type of log messages that this program prints
+
+//The PRINT_MSG macro is used to print messages to a log file where we will keep track of the watchdog and initializations of GPIO pins.
 #define PRINT_MSG(file, time1, programName, sev, str) \
 	do{ \
 			fprintf(logFile, "%s : %s : %s : %s", time1, programName, sev, str); \
 			fflush(logFile); \
 	}while(0)
+//PRINT_MSG1 is used to write the inaugural message to a Stats file in order to know when it is first written to.
 #define PRINT_MSG1(file, time1, programName, sev, str) \
 	do{ \
 			fprintf(statsFile, "%s : %s : %s : %s ", time1, programName, sev, str); \
 			fflush(statsFile); \
 	}while(0)
+//PRINT_MSG2 writes to the Stats file and updates when each laser was broken and then outputs the total amount of times each laser was broken. The amount of times an object "enters" or "exits" is also printed at the end.
 #define PRINT_MSG2(file, time1, programName, sev, str, point) \
 	do{ \
 			fprintf(statsFile, "%s : %s : %s : %s : %d \n\n", time1, programName, sev, str, *point); \
 			fflush(statsFile); \
 	}while(0)
 
-// #define PRINT_MSG2(file, time1, programName, sev, str, str, str) 
-// PRINT_MSG2(statsFile, time1, programName, "sev = Info ", "Laser 1 was broken ", laser1Count " times \n\n");
-// 	getTime(time1);
-// 	PRINT_MSG2(statsFile, time1, programName, "sev = Info ", "Laser 2 was broken ", laser2Count " times \n\n");
-// 	getTime(time1);
-// 	PRINT_MSG3(statsFile, time1, programName, "sev = Info ", numberIn, " objects entered the room \n\n");
-// 	getTime(time1);
-// 	PRINT_MSG3(statsFile, time1, programName, "sev = Info ", numberOut, " objects exitted the room \n\n");
-
 //HARDWARE DEPENDENT CODE
 
+//initializeGPIO is used to initialize all of the GPIO pins on the Raspberry Pi.
 GPIO_Handle initializeGPIO() {
 	GPIO_Handle gpio;
 	gpio = gpiolib_init_gpio();
@@ -48,7 +46,10 @@ GPIO_Handle initializeGPIO() {
 	}
 	return gpio;
 }
+
+//Declaring an enum that will be used to read a config file.
 enum State { START, EQUALS, NOT_EQUALS, TIMEOUT, LOGFILE, STATSFILE };
+//The readConfig function uses a State Machine to read the necessary information (watchdog timer, and directory of the log and stats file that will be later written to) from a config file.
 void readConfig(FILE* configFile, int* timeout, char* logFileName, char* statsFileName) {
 
 	int i = 0;
@@ -128,21 +129,9 @@ void readConfig(FILE* configFile, int* timeout, char* logFileName, char* statsFi
 						{
 							logFileName[j] = buffer[i];
 							++j;
-						}/*
-						else {
-							char defaultLog[24] = "/home/pi/defaultlog.log";
-							for(int l = 0; l <= 24; l++){
-								logFileName[j] = defaultLog[l];
-								j++;
-							}
-						}*/
+						}
 						++i;
 					}
-					/*	else {
-						++i;
-						s = NOT_EQUALS;
-					}*/
-
 					//Add a null terminator at the end
 					logFileName[j] = 0;
 					++parameter;
@@ -161,13 +150,6 @@ void readConfig(FILE* configFile, int* timeout, char* logFileName, char* statsFi
 							statsFileName[k] = buffer[i];
 							++k;
 						}
-						/*else {
-							char defaultStats[26] = "/home/pi/defaultstats.log";
-							for(int l = 0; l <= 26; l++){
-								statsFileName[k] = defaultStats[l];
-								k++;
-							}
-						}*/
 						++i;
 					}
 					//Add a null terminator at the end
@@ -181,13 +163,14 @@ void readConfig(FILE* configFile, int* timeout, char* logFileName, char* statsFi
 					break;
 
 				}
-				//++i;
 			}
 		}
 	}
 }
 
-//Checking laser diode statuses for each diode; can probably just switch order to reverse left and right
+//Checks the status of each laser by detecting if the corresponding photodiode receives light from the laser. If the photodiode does not receive light
+// it does not produce a voltage and the input pin from the Raspberry Pi does not detect an input voltage.
+
 #define LASER1_PIN_NUM 4 //Left diode
 #define LASER2_PIN_NUM 6 //Right diode
 int laserDiodeStatus(GPIO_Handle gpio, int diodeNumber) {
@@ -311,6 +294,8 @@ int main(const int argc, const char* const argv[]) {
 		return -1;
 	}
 
+	//Start of writing messages to log file.
+
 	char time1[30];
 	getTime(time1);
 
@@ -337,7 +322,9 @@ int main(const int argc, const char* const argv[]) {
 		return -1;
 	}
 
-	//watchdog initialization
+	//End of writing to log file.
+
+	//Watchdog initialization
 	int watchdog;
 	if ((watchdog = open("/dev/watchdog", O_RDWR | O_NOCTTY)) < 0) {
 		printf("Error: Couldn't open watchdog device! %d\n", watchdog);
@@ -362,11 +349,8 @@ int main(const int argc, const char* const argv[]) {
 	//INSERT STATE MACHINE HERE
 
 
-
-	//printf("Test Message\n");
 	outputMessage(laser1Count, laser2Count, numberIn, numberOut);
-	//printf("logFile:%s \n", *logFileName);
-	//printf("statsFile:%s \n", *statsFileName);
+
 	getTime(time1);
 	PRINT_MSG1(statsFile, time1, programName, "sev = Info ", "Stats have been updated\n\n");
 
