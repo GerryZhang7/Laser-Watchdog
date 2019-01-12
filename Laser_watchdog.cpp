@@ -346,7 +346,175 @@ int main(const int argc, const char* const argv[]) {
 	PRINT_MSG(logFile, time1, programName, "sev = Info ", "User has entered a valid time\n\n");
 
 
-	//INSERT STATE MACHINE HERE
+	//State machine that reads the current state of the lasers. Outputs messages in real-time.
+
+	while ((time(NULL) - startTime) < timeLimit) {
+		int left = laserDiodeStatus(gpio, 1);
+		int right = laserDiodeStatus(gpio, 2);
+		fprintf(stderr, "status %i %i \n", left, right);
+
+		//Status--> light received/laser unbroken
+		//!Status--> light not received/laser broken
+		//Left == laser1
+		//Right == laser2
+		//Left -> Right == out
+		//Right -> Left == in
+		switch (s) {
+		case START:
+			if (left && right) {
+				s = NONE;
+				break;
+			}
+			else if (!left && right) {
+				++laser1Count;
+				getTime(time1);
+				PRINT_MSG(logFile, time1, programName, "sev = Info ", "Laser 1 has been broken\n\n");
+				s = LEFT;
+				break;
+			}
+			else if (left && !right) {
+				++laser2Count;
+				getTime(time1);
+				PRINT_MSG(logFile, time1, programName, "sev = Info ", "Laser 2 has been broken\n\n");
+				s = RIGHT;
+				break;
+			}
+			else {
+				errorMessage(-1);
+				return -1;
+				break;
+			}
+			break;
+		case LEFT:
+			if (!left && right) {
+				s = LEFT;
+				break;
+			}
+			else if (!left && !right) {
+				++laser2Count;
+				getTime(time1);
+				PRINT_MSG(logFile, time1, programName, "sev = Info ", "Laser 2 has been broken\n\n");
+				s = LEFT_BOTH;
+				break;
+			}
+			else if (left && right) {
+				s = NONE;
+				break;
+			}
+			break;
+		case LEFT_BOTH:
+			if (!left && !right) {
+				s = LEFT_BOTH;
+				break;
+			}
+			else if (!left && right) {
+				s = LEFT;
+				break;
+			}
+			else if (left && !right) {
+				s = LEFT_RIGHT;
+				break;
+			}
+			break;
+		case LEFT_RIGHT:
+			if (left && !right) {
+				s = LEFT_RIGHT;
+				break;
+			}
+			else if (!left && !right) {
+				++laser1Count;
+				getTime(time1);
+				PRINT_MSG(logFile, time1, programName, "sev = Info ", "Laser 1 has been broken\n\n");
+				s = LEFT_BOTH;
+				break;
+			}
+			else if (left && right) {
+				s = OUT;
+				break;
+			}
+			break;
+		case OUT:
+			++numberOut;
+			s = NONE;
+			break;
+		case RIGHT:
+			if (left && !right) {
+				s = RIGHT;
+				break;
+			}
+			else if (!left && !right) {
+				++laser1Count;
+				getTime(time1);
+				PRINT_MSG(logFile, time1, programName, "sev = Info ", "Laser 1 has been broken\n\n");
+				s = RIGHT_BOTH;
+				break;
+			}
+			else if (left && right) {
+				s = NONE;
+				break;
+			}
+			break;
+		case RIGHT_BOTH:
+			if (!left && !right) {
+				s = RIGHT_BOTH;
+				break;
+			}
+			else if (left && !right) {
+				s = RIGHT;
+				break;
+			}
+			else if (!left && right) {
+				s = RIGHT_LEFT;
+				break;
+			}
+			break;
+		case RIGHT_LEFT:
+			if (!left && right) {
+				s = RIGHT_LEFT;
+				break;
+			}
+			else if (!left && !right) {
+				++laser2Count;
+				getTime(time1);
+				PRINT_MSG(logFile, time1, programName, "sev = Info ", "Laser 2 has been broken\n\n");
+				s = RIGHT_BOTH;
+				break;
+			}
+			else if (left && right) {
+				s = IN;
+				break;
+			}
+			break;
+		case IN:
+			++numberIn;
+			s = NONE;
+		case NONE:
+			if (left && right) {
+				s = NONE;
+				break;
+			}
+			else if (!left && right) {
+				++laser1Count;
+				getTime(time1);
+				PRINT_MSG(logFile, time1, programName, "sev = Info ", "Laser 1 has been broken\n\n");
+				s = LEFT;
+				break;
+			}
+			else if (left && !right) {
+				++laser2Count;
+				getTime(time1);
+				PRINT_MSG(logFile, time1, programName, "sev = Info ", "Laser 2 has been broken\n\n");
+				s = RIGHT;
+				break;
+			}
+			break;
+		default:
+			errorMessage(-1);
+			return -1;
+			break;
+		}
+	}
+
 
 
 	outputMessage(laser1Count, laser2Count, numberIn, numberOut);
